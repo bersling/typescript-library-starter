@@ -1,0 +1,27 @@
+{
+  "name": "hwrld",
+  "version": "0.0.0",
+  "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bersling/mylib.git"
+  },
+  "keywords": [
+    "demo",
+    "typescript",
+    "library",
+    "hello",
+    "world",
+    "2017"
+  ],
+  "author": "Daniel Niederberger <bersling@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bersling/mylib/issues"
+  },
+  "homepage": "https://github.com/bersling/mylib#readme"
+}
