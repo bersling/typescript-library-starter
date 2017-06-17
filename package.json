@@ -2,7 +2,8 @@
   "name": "hwrld",
   "version": "0.0.1",
   "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
