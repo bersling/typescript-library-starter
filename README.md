@@ -1,3 +1,7 @@
 # Example Typescript Library
 
-Simple starter library in from June 2017.
+Simple starter library from June 2017.
+Tutorial can be found at
+[how-to-write-a-typescript-library.com](http://how-to-write-a-typescript-library.com).
+
+Or just browser the code here! Or clone the repo.
