@@ -1,4 +1,4 @@
-# Example Typescript Library
+# Example Typescript 2.x Library
 
 Simple starter library from June 2017.
 Tutorial can be found at
