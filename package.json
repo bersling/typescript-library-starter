@@ -1,6 +1,6 @@
 {
   "name": "hwrld",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bersling/mylib.git"
+    "url": "git+https://github.com/bersling/typescript-library-starter.git"
   },
   "keywords": [
     "demo",
@@ -22,7 +22,7 @@
   "author": "Daniel Niederberger <bersling@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bersling/mylib/issues"
+    "url": "https://github.com/bersling/typescript-library-starter/issues"
   },
-  "homepage": "https://github.com/bersling/mylib#readme"
+  "homepage": "https://github.com/bersling/typescript-library-starter#readme"
 }

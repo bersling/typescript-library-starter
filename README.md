@@ -1,8 +1,8 @@
 # Example Typescript 2.x Library
 
-Simple starter library from June 2017.
+Simple starter library from May 2018.
 Tutorial can be found at
-[how-to-write-a-typescript-library.com](http://how-to-write-a-typescript-library.com).
+[https://www.tsmean.com/articles/how-to-write-a-typescript-library/](https://www.tsmean.com/articles/how-to-write-a-typescript-library/).
 
 Or just browse the code here! Or clone the repo.
 
@@ -19,10 +19,10 @@ tsc
 ```
 
 You can check if everything is working like this:
-http://how-to-write-a-typescript-library.com/local-consumer
+https://www.tsmean.com/articles/how-to-write-a-typescript-library/local-consumer
 
 You can write a test like this:
-http://how-to-write-a-typescript-library.com/unit-testing
+https://www.tsmean.com/articles/how-to-write-a-typescript-library/unit-testing
 
 And once you're ready, simply change the `name` in the `package.json`
 and publish your brand new cool library. Have fun!
