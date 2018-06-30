@@ -1,11 +1,13 @@
 {
   "name": "hwrld",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "link": "npm run build && cd dist && npm link"
   },
   "repository": {
     "type": "git",
@@ -24,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/bersling/typescript-library-starter/issues"
   },
-  "homepage": "https://github.com/bersling/typescript-library-starter#readme"
+  "homepage": "https://github.com/bersling/typescript-library-starter#readme",
+  "devDependencies": {
+    "typescript": "^2.9.2"
+  }
 }
