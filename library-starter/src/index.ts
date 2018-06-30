@@ -1,2 +1,2 @@
-export {HelloWorld} from './hello-world'
+export {sayHello, sayGoodbye} from './hello-world'
 

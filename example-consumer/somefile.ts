@@ -1,2 +1,2 @@
-import {HelloWorld} from 'hwrld'
-HelloWorld.sayHello();
+import {sayHello} from 'hwrld'
+sayHello();

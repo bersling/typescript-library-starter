@@ -1,8 +1,6 @@
-export class HelloWorld {
-  static readonly sayHello = () => {
-    console.log('hi')
-  }
-  static readonly sayGoodbye = () => {
-    console.log('goodbye')
-  }
+export function sayHello() {
+  console.log('hi')
+}
+export function sayGoodbye() {
+  console.log('goodbye')
 }
