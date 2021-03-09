@@ -4,11 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx ts-node somefile",
+    "linklib": "npm link ../library-starter",
+    "install-beta": "npm install hwrld@beta",
+    "install-lib": "npm install hwrld"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "hwrld": "^2.0.0"
+    "hwrld": "^2.1.1"
+  },
+  "devDependencies": {
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3"
   }
 }
