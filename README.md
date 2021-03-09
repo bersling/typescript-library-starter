@@ -30,7 +30,7 @@ npm run linklib
 npm test
 ```
 
-Here `npm run linklib` is just an alias for `npm link ../library-starter`.
+Here `npm run linklib` is just an alias for `npm run --prefix ../library-starter build && npm link ../library-starter`.
 
 ## Publishing a beta aka. "next" version
 

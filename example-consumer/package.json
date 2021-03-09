@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npx ts-node somefile",
-    "linklib": "npm link ../library-starter",
+    "linklib": "npm run --prefix ../library-starter build && npm link ../library-starter",
     "install-beta": "npm install hwrld@beta",
     "install-lib": "npm install hwrld"
   },
