@@ -1,5 +1,5 @@
 {
-  "name": "hwrld",
+  "name": "@b-street/ethers-money",
   "version": "2.1.1",
   "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
   "main": "dist/index.js",

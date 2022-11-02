@@ -1,0 +1,36 @@
+on:
+  push:
+    
+
+
+
+
+on:
+  push:
+    branches:
+      # A branch whose name starts with releases/, like releases/10 (refs/heads/releases/10)
+      - 'releases/**'
+    
+    # something like this
+    - run: npm install
+
+
+
+
+
+
+
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 12
+      - run: npm install
+      - run: npm test
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
