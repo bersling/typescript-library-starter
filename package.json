@@ -1,0 +1,25 @@
+{
+  "name": "@b-street/monorepo",
+  "version": "0.0.0",
+  "keywords": [
+    "ethers",
+    "money",
+    "ethereum",
+    "uniswap",
+    "sushiswap",
+    "traderjoe",
+    "workspaces",
+    "yarn"
+  ],
+  "private": false,
+  "scripts": {
+    "publish": "yarn workspace @b-street/ethers-money publish",
+    "test": "yarn workspace @b-street/ethers-money test",
+    "build": "yarn workspace @b-street/ethers-money build"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  }
+}
