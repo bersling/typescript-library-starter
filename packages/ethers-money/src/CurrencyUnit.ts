@@ -12,12 +12,30 @@ export type CurrencyLike = string |
     { currencyUnit: CurrencyLike } |
     { symbol: string }
 
-const DEBUG = true;
+const DEBUG = false;
 
-const SUPPORTED_CURRENCIES: { [key: string]: { name: string, digits: UnsafeDigits } } = {}
+const SUPPORTED_CURRENCIES: { [key: string]: { name: string, digits: UnsafeDigits } } = {
+    AVAX: {name: 'Native Avalanche', digits: 18},
+    WAVAX: {name: 'Wrapped Avalanche', digits: 18},
+
+    USD: {name: 'Dollars', digits: {formatted: 2, parsed: 2}},
+    USDC: {name: 'Circle USD', digits: {formatted: 2, parsed: 6}},
+
+    MIM: {name: 'Magic Internet Money', digits: {formatted: 2, parsed: 18}},
+    DAI: {name: 'DAI', digits: 18},
+
+    BTC: {name: 'Bitcoin', digits: 18},
+
+    ETH: {name: 'Ethereum', digits: 18},
+    WETH: {name: 'Wrapped Ethereum', digits: 18},
+
+    LP: {name: 'Generic LP', digits: 18},
+
+}
 
 const ALL: { [key: string]: CurrencyUnit } = {};
 
+//region export class CurrencyUnit
 export class CurrencyUnit {
 
     // static ether:number = 18;
@@ -116,7 +134,7 @@ export class CurrencyUnit {
         }
     }
 
-    static shouldBeCurrencyUnit(like:CurrencyUnit|CurrencyLike|any, message = `shouldBeCurrencyUnit: ${like}`) : CurrencyUnit {
+    static shouldBeCurrencyUnit(like: CurrencyUnit | CurrencyLike | any, message = `shouldBeCurrencyUnit: ${like}`): CurrencyUnit {
         if (like instanceof CurrencyUnit) return like
         return Errors.throwNotSure(like, message)
     }
@@ -125,8 +143,11 @@ export class CurrencyUnit {
         if (like instanceof CurrencyUnit)
             return like;
 
+        const symbol = this.asSymbol(like);
+        const found = this.find(symbol)
+
         return this.shouldBeCurrencyUnit(
-            this.find(this.asSymbol(like)),
+            found,
             optionalMessage)
 
         // const symbol = this.shouldBeSymbolString(this.optSymbol(like))
@@ -199,9 +220,9 @@ export class CurrencyUnit {
     }
 
     //region Symbols
-    static SYMBOL_FORMAT = /^[A-Z]{2,4}$/
+    static SYMBOL_FORMAT = /^[A-Z]{2,5}$/
 
-    static isSymbolStringFormat(string: string|any) {
+    static isSymbolStringFormat(string: string | any) {
         if (!string) return false;
         if (typeof string !== 'string') return false
         return this.SYMBOL_FORMAT.test(string)
@@ -210,12 +231,12 @@ export class CurrencyUnit {
     static optSymbolString(like: CurrencyLike | any) {
         if (!like) return undefined
         if (like instanceof CurrencyUnit) return like.symbol
-        if (this.isSymbolStringFormat(like)) return like
+        if (CurrencyUnit.isSymbolStringFormat(like)) return like
     }
 
     static shouldBeSymbolString(like: string | any): string {
         Checks.assert(
-            this.isSymbolStringFormat(like),
+            CurrencyUnit.isSymbolStringFormat(like),
             `this.isSymbolStringFormat(${like})`)
         return like;
     }
@@ -259,6 +280,7 @@ export class CurrencyUnit {
     //endregion
 
 }
+//endregion
 
 export default class Currencies {
 
@@ -277,22 +299,26 @@ export default class Currencies {
     static AVAX = CurrencyUnit.orThrow('AVAX');
     static WAVAX = CurrencyUnit.orThrow('WAVAX');
 
-    static GRAPE = CurrencyUnit.orThrow('GRAPE');
-    static WINE = CurrencyUnit.orThrow('WINE');
-
     static LP = CurrencyUnit.orThrow('LP');    /// GENERAL LP
 
-    static find(symbol: string) {
-        return orThrow(ALL[symbol], `Currencies.find: ${symbol}`);
+    static register({name, symbol, digits}: {name:string, symbol:string, digits:UnsafeDigits}) {
+        SUPPORTED_CURRENCIES[symbol] = {name, digits}
     }
 
-    // to({name, symbol, digits}: { name: string | undefined, symbol: string, digits: UnsafeDigits }) {
-    //     return CurrencyUnit.to({
-    //         name,
-    //         symbol,
-    //         digits: Digits.to(digits)
-    //     });
-    // }
+    static find(symbol: string) {
+        return orThrow(CurrencyUnit.find(symbol),
+            `Currencies.find: ${symbol}`);
+    }
+
+    static shouldBeDifferentCurrency(param: CurrencyLike, big: CurrencyLike) {
+        big = CurrencyUnit.asSymbol(big)
+        param = CurrencyUnit.asSymbol(param)
+        if (big === param) {
+            return;
+        }
+
+        throw new Error(`shouldBeDifferentCurrency: ${param} === ${big}`);
+    }
 }
 
 export {Currencies}
