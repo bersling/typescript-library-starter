@@ -170,7 +170,8 @@ export class BigMoney extends MoneyMath {
 
     //region Math
     add(other: BigMoneyProvider) {
-        return this.checkedMath(other,
+        return this.checkedMath(
+            other,
             (them, self) => self.add(them)
         );
     }
@@ -178,22 +179,19 @@ export class BigMoney extends MoneyMath {
     sub(other: BigMoneyProvider) {
         return this.checkedMath(
             other,
-            (them, self) =>
-                self.sub(them));
+            (them, self) => self.sub(them));
     }
 
     div(other: BigMoneyProvider): BigMoney {
         return this.checkedMath(
             other,
-            (them, self) =>
-                self.div(them));
+            (them, self) => self.div(them));
     }
 
     mul(other: BigMoneyProvider): BigMoney {
         return this.checkedMath(
             other,
-            (them, self) =>
-                self.mul(them)
+            (them, self) => self.mul(them)
         );
     }
 
@@ -201,8 +199,7 @@ export class BigMoney extends MoneyMath {
         Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
         return this.uncheckedMath(
             BigMoney.toUnboundedExternalAmount(other),
-            (them, self) =>
-                self.div(them));
+            (them, self) => self.div(them));
         // this.externalNumber.divUnsafe(amount));
     }
 
@@ -210,8 +207,7 @@ export class BigMoney extends MoneyMath {
         Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
         return this.uncheckedMath(
             BigMoney.toUnboundedExternalAmount(other),
-            (them, self) =>
-                self.mul(them));
+            (them, self) => self.mul(them));
     }
 
     //endregion
@@ -227,10 +223,11 @@ export class BigMoney extends MoneyMath {
         Currencies.shouldBeDifferentCurrency(this, price);
         /// 1000000000000000000 ($1) * 2500 ($25) =
 
+        // TODO: this needs to consider currency/directionality.
+
         const result = BigMoney.likeExternal(
             price,
-            BigMoney.toExternalDecimal(price)
-                .mul(
+            BigMoney.toExternalDecimal(price).mul(
                     BigMoney.toExternalDecimal(this)));
 
         console.log(`[${this}].convert(${price}) = ${result}`);
@@ -294,10 +291,6 @@ export class BigMoney extends MoneyMath {
                 mp, roundingMode));
     }
 
-    static withBigMoney<T>(provider: BigMoneyProvider, fn: (money:BigMoney) => T): T{
-        return fn(provider.toBigMoney())
-    }
-
     static toRoundedExternalAmount(mp: BigMoneyProvider, rounding: RoundingMode): string {
         return BigMoney.withBigMoney(mp, (money) =>
             Numbers.toRoundedDecimalPlaces(
@@ -307,6 +300,10 @@ export class BigMoney extends MoneyMath {
                     rounding,
                 }
             ))
+    }
+
+    static withBigMoney<T>(provider: BigMoneyProvider, fn: (money:BigMoney) => T): T{
+        return fn(provider.toBigMoney())
     }
 
     //endregion
@@ -394,10 +391,6 @@ export class Money extends MoneyMath {
         return Money.likeInternal(this, this.internalNumber.abs());
     }
 
-    convert(price: Money, rounding: RoundingMode = RoundingMode.TRUNCATE): Money {
-        return this.toBigMoney().convert(price).toMoney(rounding);
-    }
-
     mul(money: Money, roundingMode = this.roundingMode) {
         return this.toBigMoney().mul(money).toMoney(roundingMode)
     }
@@ -407,6 +400,10 @@ export class Money extends MoneyMath {
     }
 
     //endregion
+
+    convert(price: Money, rounding: RoundingMode = RoundingMode.TRUNCATE): Money {
+        return this.toBigMoney().convert(price).toMoney(rounding);
+    }
 
     //region Comparison
 
