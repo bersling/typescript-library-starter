@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "test2": "echo \"Error: no test specified\" && exit 1",
-    "test": "mocha --watch -r ts-node/register --loader=ts-node/esm tests/lib/**",
+    "test": "mocha --watch -r ts-node/register --loader=ts-node/esm tests/**",
     "build": "tsc",
     "publish": "npm run build && npm run publish-lib",
     "publish-lib": "npm run build && npm publish",

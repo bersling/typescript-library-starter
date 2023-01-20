@@ -11,7 +11,7 @@
     "workspaces",
     "yarn"
   ],
-  "private": false,
+  "private": true,
   "scripts": {
     "publish": "yarn workspace @b-street/ethers-money publish",
     "test": "yarn workspace @b-street/ethers-money test",
