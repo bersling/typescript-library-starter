@@ -120,13 +120,6 @@ export class BigMoney extends MoneyMath {
 
     //endregion
 
-    abs(): BigMoney {
-        return BigMoney.withAmount(
-            this,
-            this.unboundedExternalAmount.abs()
-        );
-    }
-
     //region BigMoneyProvider
     toBigMoney(): BigMoney {
         return this;
@@ -163,12 +156,19 @@ export class BigMoney extends MoneyMath {
     }
 
     [util.inspect.custom]() {
+        // how console.log sees it (and my debugger/inspector...)
         return this.toString();
     }
 
     //endregion
 
     //region Math
+    abs(): BigMoney {
+        return BigMoney.withAmount(
+            this,
+            this.unboundedExternalAmount.abs());
+    }
+
     add(other: BigMoneyProvider) {
         return this.checkedMath(
             other,
@@ -236,7 +236,6 @@ export class BigMoney extends MoneyMath {
     }
 
     //endregion
-
 
     //region Static
 
