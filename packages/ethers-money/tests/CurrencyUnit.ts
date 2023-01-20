@@ -22,9 +22,9 @@ describe('CurrencyUnit', function () {
             {symbol: symbol}]
 
     describe('withSymbol', function () {
-        it('asdf', () => {
-            expect(CurrencyUnit.withSymbol('BTC', (thing) => thing)).eq('BTC')
-        })
+        it('asdf', () =>
+            expect(CurrencyUnit.withSymbol('BTC', (thing) => thing))
+                .eq('BTC'))
     });
 
     describe('pullProps', function () {
@@ -34,16 +34,16 @@ describe('CurrencyUnit', function () {
     describe('optLike', function () {
         toCurrencyCombinations('BTC')
             .forEach(thing =>
-            it(`like: ${JSON.stringify(thing)}`, () =>
-                expect(CurrencyUnit.optLike(thing)?.symbol)
-                    .eq('BTC')))
+                it(`like: ${JSON.stringify(thing)}`, () =>
+                    expect(CurrencyUnit.optLike(thing)?.symbol)
+                        .eq('BTC')))
     });
 
     describe('isLike', function () {
         toCurrencyCombinations('BTC')
             .forEach(thing =>
-            it(`like: ${JSON.stringify(thing)}`, () =>
-                expect(CurrencyUnit.isLike(thing)).true))
+                it(`like: ${JSON.stringify(thing)}`, () =>
+                    expect(CurrencyUnit.isLike(thing)).true))
     });
 
     describe('asSymbol', function () {
@@ -57,7 +57,6 @@ describe('CurrencyUnit', function () {
     });
 
     describe('optSymbol', function () {
-
         toCurrencyCombinations('BTC')
             .forEach(thing =>
                 it(`test: ${JSON.stringify(thing)}`, () =>
