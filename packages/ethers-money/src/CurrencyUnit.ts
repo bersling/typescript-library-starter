@@ -3,8 +3,10 @@ import Checks from "./utils/Checks";
 import util from "util";
 import Digits, {SafeDigits, UnsafeDigits} from "./types/Digits";
 import Errors from "./utils/Errors";
-import {orThrow} from "./utils";
 import _ from "lodash";
+import {BigNumber} from "./types/Numbers";
+import Money from "./Money";
+import {Optional} from "./types";
 
 export type CurrencyLike = string |
     CurrencyUnit |
@@ -14,7 +16,7 @@ export type CurrencyLike = string |
 
 const DEBUG = false;
 
-const SUPPORTED_CURRENCIES: { [key: string]: { name: string, digits: UnsafeDigits } } = {
+const REGISTRATIONS: { [key: string]: { name: string, digits: UnsafeDigits } } = {
     AVAX: {name: 'Native Avalanche', digits: 18},
     WAVAX: {name: 'Wrapped Avalanche', digits: 18},
 
@@ -46,6 +48,7 @@ export class CurrencyUnit {
     kwei:number = 3;
     wei:number = 0;*/
 
+    //region props: name, symbol, digits, decimals
     name: string;
     symbol: string;
     digits: SafeDigits;
@@ -53,9 +56,10 @@ export class CurrencyUnit {
     get decimals() {
         return this.digits.parsed;
     }
+    //endregion
 
-    //region protected ctor({ name, symbol, digits })
-    private constructor({name, symbol, digits}: { name: string | undefined, symbol: string, digits: UnsafeDigits }) {
+    //region protected constructor({ name, symbol, digits })
+    constructor({name, symbol, digits}: { name: string | undefined, symbol: string, digits: UnsafeDigits }) {
         this.digits = Digits.to(digits);
         this.name = name || `CurrencyUnit`;
         this.symbol = symbol;
@@ -102,121 +106,19 @@ export class CurrencyUnit {
     ////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////
 
-    //region static helpers
+    //region static helpers (create / exists)
 
-    private static uncheckedCreate({
-                                       name,
-                                       symbol,
-                                       digits
-                                   }: { name: string | undefined, symbol: string, digits: UnsafeDigits }): CurrencyUnit {
-        if (ALL[symbol])
-            return ALL[symbol];
-        return ALL[symbol] = new CurrencyUnit({
-            name,
-            symbol,
-            digits: Digits.to(digits)
-        });
-    }
-
-    static find(symbol: string): CurrencyUnit | undefined {
-        if (ALL[symbol])
-            return ALL[symbol];
-        if (!SUPPORTED_CURRENCIES[symbol])
-            return undefined;
-        try {
-            return ALL[symbol] = CurrencyUnit.uncheckedCreate({
-                name: SUPPORTED_CURRENCIES[symbol]?.name || symbol,
-                digits: SUPPORTED_CURRENCIES[symbol]?.digits,
-                symbol: symbol
-            });
-        } finally {
-            DEBUG && console.trace(`created CurrencyUnit.find: ${symbol}`)
-        }
-    }
-
-    static shouldBeCurrencyUnit(like: CurrencyUnit | CurrencyLike | any, message = `shouldBeCurrencyUnit: ${like}`): CurrencyUnit {
+    static orSkip(like: Optional<CurrencyLike>) {
+        if (!like) return undefined
         if (like instanceof CurrencyUnit) return like
-        return Errors.throwNotSure(like, message)
+        return Currencies.optRegistered(CurrencyUnit.optSymbol(like))
     }
 
     static orThrow(like: CurrencyLike, optionalMessage: string = `CurrencyUnit.orThrow: ${like}`): CurrencyUnit {
-        if (like instanceof CurrencyUnit)
-            return like;
-
-        const symbol = this.asSymbol(like);
-        const found = this.find(symbol)
-
-        return this.shouldBeCurrencyUnit(
-            found,
-            optionalMessage)
-
-        // const symbol = this.shouldBeSymbolString(this.optSymbol(like))
-        // if (typeof like === 'string')
-        //     return this.orThrow(
-        //         CurrencyUnit.find(like)!!,
-        //         optionalMessage);
-
-        // const any = (val: any) => val
-
-        // const possibilities = [
-        //     (like as { symbol: string }).symbol,
-        //     (like as { currency: CurrencyLike }).currency,
-        //     (like as { currencyUnit: CurrencyLike }).currencyUnit,
-        //     // any(like).symbol,
-        //     // any(like).currency,
-        //     // any(like).currencyUnit,
-        // ]
-        //     .filter(thing => !!thing)
-        //     .map(thing => !thing || CurrencyUnit.find(thing))
-        // // .filter(thing => !!thing)
-        // // .find()
-
-        // if ((like as { symbol: string }).symbol)
-        //     return this.orThrow((like as { symbol: string }).symbol);
-        //
-        // if ((like as { currency: CurrencyLike }).currency) {
-        //     return this.orThrow((like as { currency: CurrencyLike }).currency);
-        // }
-        //
-        // if ((like as { currencyUnit: CurrencyLike }).currencyUnit) {
-        //     return this.orThrow((like as { currencyUnit: CurrencyLike }).currencyUnit);
-        // }
-
-        return Errors.throwNotSure(like, `CurrencyUnit.orThrow: ${like}`);
-    }
-
-    static exists(symbol: CurrencyLike) {
-        return !!ALL[this.asSymbol(symbol)];
-    }
-
-    static tryTo(like: CurrencyLike): CurrencyUnit | undefined {
         if (like instanceof CurrencyUnit) return like;
-        if (typeof like === 'string') return CurrencyUnit.find(like);
-        if ((like as { currency: CurrencyLike }).currency)
-            return CurrencyUnit.tryTo((like as { currency: CurrencyLike }).currency);
-        if ((like as { currencyUnit: CurrencyLike }).currencyUnit)
-            return CurrencyUnit.tryTo((like as { currencyUnit: CurrencyLike }).currencyUnit);
-        return undefined;
-    }
-
-    static optLike(like: CurrencyLike | any | undefined) {
-        return this.isLikeAndExists(like) ? this.tryTo(like) : undefined;
-    }
-
-    static isLikeAndExists(like: any) {
-        return this.isLike(like) && this.exists(like);
-    }
-
-    static isLike(symbol: CurrencyLike | any): boolean {
-        if (!symbol) return false;
-        if (symbol instanceof CurrencyUnit) return true;
-        if (typeof symbol === 'string') return true;    // TODO: some sort of parsing/format checks
-
-        if ((symbol as { currency: CurrencyLike }).currency)
-            return this.isLike((symbol as { currency: CurrencyLike }).currency);
-        if ((symbol as { currencyUnit: CurrencyLike }).currencyUnit)
-            return this.isLike((symbol as { currencyUnit: CurrencyLike }).currencyUnit);
-        return false;
+        return this.shouldBeCurrencyUnit(
+            this.orSkip(this.asSymbol(like)),
+            optionalMessage)
     }
 
     //region Symbols
@@ -228,58 +130,93 @@ export class CurrencyUnit {
         return this.SYMBOL_FORMAT.test(string)
     }
 
-    static optSymbolString(like: CurrencyLike | any) {
-        if (!like) return undefined
-        if (like instanceof CurrencyUnit) return like.symbol
-        if (CurrencyUnit.isSymbolStringFormat(like)) return like
-    }
-
-    static shouldBeSymbolString(like: string | any): string {
+    static shouldBeSymbolString(like: string | any, message = `shouldBeSymbolString: ${like}`): string {
         Checks.assert(
             CurrencyUnit.isSymbolStringFormat(like),
-            `this.isSymbolStringFormat(${like})`)
+            message)
         return like;
+    }
+
+    static asSymbol(like: CurrencyLike): string {
+        return this.shouldBeSymbolString(this.optSymbol(like))
+    }
+
+    static optSymbol(like: CurrencyLike): string | undefined {
+        const returnIf = (thing: string | undefined) => ((CurrencyUnit.isSymbolStringFormat(thing)) ? thing : undefined)
+        if (!like) return undefined
+        if (like instanceof CurrencyUnit) return returnIf(like.symbol)
+        if (typeof like === 'string') return returnIf(like as string)
+        return returnIf(
+            this._pluckLikeProps(like)
+                .map(thing => this.optSymbol(thing))
+                .filter(thing => !_.isNil(thing))
+                .shift())
+    }
+
+    static withSymbol<T>(like: CurrencyLike, fn: (thing: string) => T): T {
+        return fn(CurrencyUnit.asSymbol(like))
     }
 
     //endregion
 
-    static asSymbol(like: CurrencyLike): string {
-        return this.shouldBeSymbolString(
-            this.optSymbol(like))
-    }
+    //region pulls
 
-    static optSymbol(like: CurrencyLike): string | undefined {
-        return this.sniffSymbols(like)
-            .map(this.optSymbolString)
-            .filter(symbol => !!symbol) // nuke undefined
-            .pop()
-    }
-
-    // static pullSymbol(like: CurrencyLike) {
-    //     if (!like) return undefined;
-    //     if (like instanceof CurrencyUnit) return like.symbol
-    //
-    //     this.sniffSymbols(like)
-    //         .map()
-    // }
-
-    static sniffSymbols(like: CurrencyLike) {
+    private static _pluckLikeProps(like: CurrencyLike): any[] {
         if (!like) return []
+        if (typeof like === 'string') return [like]
+        if (like instanceof CurrencyUnit) return [like]
 
         return _.uniq([
-            // ((like instanceof CurrencyUnit) ? like : undefined),
-            ((typeof like === 'string') ? like : undefined),
             (like as { symbol: any }).symbol,
             (like as { currency: any }).currency,
             (like as { currencyUnit: any }).currencyUnit
         ])
-            .filter(thing => !!thing) // filter undefined
-            .filter(thing => (thing instanceof CurrencyUnit) || (this.isSymbolStringFormat(thing as string)))
+            .filter(thing => !_.isNil(thing))
     }
 
     //endregion
 
+    //region with (execute)
+    static withCurrency<T>(like: CurrencyLike, fn: (thing: CurrencyUnit) => T): T {
+        return this.withSymbol(like,
+            (thing: string) => fn(CurrencyUnit.orThrow(thing)))
+    }
+
+    //endregion
+
+    //region Like
+
+    static optLike(like: CurrencyLike): Optional<CurrencyUnit> {
+        if (like instanceof CurrencyUnit) return like;
+        if (typeof like === 'string') return CurrencyUnit.orSkip(like);
+        return this._pluckLikeProps(like)
+            .map(thing => CurrencyUnit.orSkip(thing))
+            .filter(thing => !_.isNil(thing))
+            .shift()
+    }
+
+    static isLike(symbol: CurrencyLike | any): boolean {
+        if (!symbol) return false;
+        if (symbol instanceof CurrencyUnit) return true;
+        if (typeof symbol === 'string') return this.isSymbolStringFormat(symbol)
+
+        // if ((symbol as { currency: CurrencyLike }).currency)
+        //     return this.isLike((symbol as { currency: CurrencyLike }).currency);
+        // if ((symbol as { currencyUnit: CurrencyLike }).currencyUnit)
+        //     return this.isLike((symbol as { currencyUnit: CurrencyLike }).currencyUnit);
+        return !!this._pluckLikeProps(symbol)
+            .find(thing => this.isLike(thing));
+    }
+
+    //endregion
+
+    static shouldBeCurrencyUnit(like: CurrencyLike | any, message = `shouldBeCurrencyUnit: ${like}`): CurrencyUnit {
+        if (like instanceof CurrencyUnit) return like
+        return Errors.throwNotSure(like, message)
+    }
+
 }
+
 //endregion
 
 export default class Currencies {
@@ -301,13 +238,49 @@ export default class Currencies {
 
     static LP = CurrencyUnit.orThrow('LP');    /// GENERAL LP
 
-    static register({name, symbol, digits}: {name:string, symbol:string, digits:UnsafeDigits}) {
-        SUPPORTED_CURRENCIES[symbol] = {name, digits}
+    static register({name, symbol, digits}: { name: string, symbol: string, digits: UnsafeDigits }) {
+        REGISTRATIONS[symbol] = {name, digits}
     }
 
-    static find(symbol: string) {
-        return orThrow(CurrencyUnit.find(symbol),
-            `Currencies.find: ${symbol}`);
+    private static uncheckedCreate({
+                                       name,
+                                       symbol,
+                                       digits
+                                   }: { name: string | undefined, symbol: string, digits: UnsafeDigits }): CurrencyUnit {
+        if (ALL[symbol])
+            return ALL[symbol];
+        return ALL[symbol] = new CurrencyUnit({
+            name,
+            symbol,
+            digits: Digits.to(digits)
+        });
+    }
+
+    static isRegistered(like: CurrencyLike) {
+        return CurrencyUnit.withSymbol(like,
+            symbol => !!ALL[CurrencyUnit.asSymbol(symbol)]);
+    }
+
+    static getRegistered(symbol: string): CurrencyUnit {
+        return CurrencyUnit.shouldBeCurrencyUnit(
+            Currencies.optRegistered(symbol))
+    }
+
+    static optRegistered(symbol: Optional<string>): Optional<CurrencyUnit> {
+        if (!symbol) return undefined
+        if (ALL[symbol])
+            return ALL[symbol];
+        if (!REGISTRATIONS[symbol])
+            return undefined;
+        try {
+            return ALL[symbol] = Currencies.uncheckedCreate({
+                name: REGISTRATIONS[symbol]?.name || symbol,
+                digits: REGISTRATIONS[symbol]?.digits,
+                symbol: symbol
+            });
+        } finally {
+            DEBUG && console.trace(`created CurrencyUnit.find: ${symbol}`)
+        }
     }
 
     static shouldBeDifferentCurrency(param: CurrencyLike, big: CurrencyLike) {
@@ -319,6 +292,18 @@ export default class Currencies {
 
         throw new Error(`shouldBeDifferentCurrency: ${param} === ${big}`);
     }
+
+    static of(formattedValue: string | BigNumber, currency: CurrencyLike) {
+        if (formattedValue instanceof BigNumber) {
+            return Money.ofInternal(currency, formattedValue);
+        } else {
+            return Money.ofExternal(currency, formattedValue);
+        }
+    };
+
+    static ofUSD(formattedValue: string | BigNumber) {
+        return Currencies.of(formattedValue, Currencies.USD)
+    };
 }
 
 export {Currencies}

@@ -20,3 +20,7 @@ export function laze<T>(lazy: Lazy<T>, fn: (item: T) => Lazy<T>): Lazy<T> {
     }
 }
 //endregion
+
+//region Optional
+export type Optional<T> = T | undefined
+//endregion

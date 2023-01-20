@@ -1,6 +1,8 @@
 import {UnboundedExternalAmount} from "../Money";
 
-export type UnsafeMath = (them: UnboundedExternalAmount, self: UnboundedExternalAmount) => UnboundedExternalAmount;
+export type UnsafeMath =
+    (them: UnboundedExternalAmount, self: UnboundedExternalAmount) =>
+        UnboundedExternalAmount;
 
 //region export enum RoundingMode
 export enum RoundingMode {

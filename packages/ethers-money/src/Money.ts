@@ -1,8 +1,9 @@
 import util from "util";
 import Currencies, {CurrencyLike, CurrencyUnit} from './CurrencyUnit';
-import Numbers, {BigNumber, BigNumberLike, Decimal, FixedNumber, NumberLike} from "./types/Numbers";
+import Numbers, {BigNumber, BigNumberLike, Decimal, FixedNumber, NativeNumberLike, NumberLike} from "./types/Numbers";
 import {RoundingMode, UnsafeMath} from "./utils/Math";
 import {Lazy} from "./types";
+import {isPromise} from "util/types";
 
 export type InternalAmount = BigNumber
 export type ExternalAmount = FixedNumber
@@ -37,13 +38,71 @@ export const ExternalDecimal: Decimal.Constructor = Decimal.clone({
     // int256 is max 39 chars
 });
 
+export abstract class MoneyMath implements BigMoneyProvider {
+
+    abstract get currencyUnit(): CurrencyUnit
+
+    abstract toBigMoney(): BigMoney;
+
+    get roundingMode() {
+        return RoundingMode.TRUNCATE;
+    }
+
+    equals(other: BigMoneyProvider) {
+        this.currencyUnit.assertEquals(other.currencyUnit);
+        return this.toBigMoney().unboundedExternalAmount.eq(
+            other.toBigMoney().unboundedExternalAmount);
+    }
+
+    _checkedExec<T>(other: BigMoneyProvider, fn: (amount: BigMoney) => T): T {
+        this.currencyUnit.assertEquals(other.currencyUnit);
+        return fn(other.toBigMoney());
+    }
+
+    _execMath(them: UnboundedExternalAmount, fn: UnsafeMath): BigMoney {
+        return BigMoney.withAmount(
+            this,
+            fn(them, this.toBigMoney().unboundedExternalAmount)
+            // .toString() // TODO: noticed this - must it be a string??
+        );
+    }
+
+    _unwrapAmount(other: BigMoneyProvider): UnboundedExternalAmount {
+        return this._checkedExec(
+            other,
+            (money) => money.unboundedExternalAmount);
+    }
+
+    checkedMath(other: BigMoneyProvider, fn: UnsafeMath): BigMoney {
+        // checked = check same currency
+        return this._checkedExec(other, (money) =>
+            this.uncheckedMath(
+                this._unwrapAmount(money),
+                fn
+            ));
+    }
+
+    uncheckedMath(other: UnboundedExternalAmount, fn: UnsafeMath): BigMoney {
+        // unchecked = ignore currency
+        return this._execMath(
+            other,
+            fn
+        );
+    }
+
+    // OPERATIONS
+
+
+}
+
 //region export class BigMoney
-export class BigMoney implements BigMoneyProvider {
+export class BigMoney extends MoneyMath {
 
     public readonly unboundedExternalAmount: UnboundedExternalAmount;
     public readonly currencyUnit: CurrencyUnit;
 
     protected constructor(unboundedExternalAmount: UnboundedExternalAmount, currencyUnit: CurrencyUnit) {
+        super();
         this.unboundedExternalAmount = unboundedExternalAmount;
         this.currencyUnit = currencyUnit;
     }
@@ -61,69 +120,6 @@ export class BigMoney implements BigMoneyProvider {
 
     //endregion
 
-    //region BigMoneyProvider
-    toBigMoney(): BigMoney {
-        return this;
-    }
-
-    toMoney(roundingMode: RoundingMode): Money {
-        return BigMoney.toMoney(this, roundingMode);
-    }
-
-    //endregion
-
-    //region Math
-    add(other: BigMoneyProvider) {
-        return this.checkedMath(other,
-            (them, self) => self.add(them)
-        );
-    }
-
-    sub(other: BigMoneyProvider) {
-        return this.checkedMath(
-            other,
-            (them, self) =>
-                self.sub(them));
-    }
-
-    div(other: BigMoneyProvider): BigMoney {
-        return this.checkedMath(
-            other,
-            (them, self) =>
-                self.div(them));
-    }
-
-    mul(other: BigMoneyProvider): BigMoney {
-        return this.checkedMath(
-            other,
-            (them, self) =>
-                self.mul(them)
-        );
-    }
-
-    uncheckedDiv(other: NumberLike) {
-        Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
-        return this.uncheckedMath(
-            BigMoney.toUnboundedExternalAmount(other),
-            (them, self) =>
-                self.div(them));
-        // this.externalNumber.divUnsafe(amount));
-    }
-
-    uncheckedMul(other: NumberLike) {
-        Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
-        return this.uncheckedMath(
-            BigMoney.toUnboundedExternalAmount(other),
-            (them, self) =>
-                self.mul(them));
-        // this.externalNumber.mulUnsafe(amount));
-    }
-
-    equals(other: BigMoneyProvider) {
-        this.currencyUnit.assertEquals(other.toBigMoney().currencyUnit);
-        return this.unboundedExternalAmount.eq(other.toBigMoney().unboundedExternalAmount);
-    }
-
     abs(): BigMoney {
         return BigMoney.withAmount(
             this,
@@ -131,62 +127,13 @@ export class BigMoney implements BigMoneyProvider {
         );
     }
 
-    checkedMath(other: BigMoneyProvider, fn: UnsafeMath): BigMoney {
-        return this.uncheckedMath(
-            this._unwrapAmount(other),
-            fn
-        );
+    //region BigMoneyProvider
+    toBigMoney(): BigMoney {
+        return this;
     }
 
-    uncheckedMath(other: UnboundedExternalAmount, fn: UnsafeMath): BigMoney {
-        return this._execMath(
-            other,
-            fn
-        );
-    }
-
-    _execMath(them: UnboundedExternalAmount, fn: UnsafeMath): BigMoney {
-        return BigMoney.withAmount(
-            this,
-            fn(them, this.unboundedExternalAmount)
-                .toString()
-        );
-    }
-
-    //endregion
-
-    //region Safety
-    _unwrapAmount(other: BigMoneyProvider): UnboundedExternalAmount {
-        return this._unwrap(
-            other,
-            (money) => money.unboundedExternalAmount);
-    }
-
-    _unwrap<T>(other: BigMoneyProvider, fn: (amount: BigMoney) => T): T {
-        this.currencyUnit.assertEquals(other.toBigMoney().currencyUnit);
-        return fn(other.toBigMoney());
-    }
-
-    //endregion
-
-    //region Conversion
-    // TODO: we need to test this function
-    /**
-     * 2 BTC @ $100ea
-     * "convert 2 BTC into USD": (2 BTC).convert(100 USD) = "200 USD"
-     * @param price
-     */
-    convert(price: BigMoneyProvider | BigMoney): BigMoney {
-        Currencies.shouldBeDifferentCurrency(this, price);
-        /// 1000000000000000000 ($1) * 2500 ($25) =
-
-        const result = BigMoney.likeExternal(
-            price,
-            price.toBigMoney().externalDecimal.mul(this.externalDecimal));
-
-        console.log(`[${this}].convert(${price}) = ${result}`);
-
-        return result;
+    toMoney(roundingMode: RoundingMode): Money {
+        return BigMoney.toMoney(this, roundingMode);
     }
 
     //endregion
@@ -221,11 +168,80 @@ export class BigMoney implements BigMoneyProvider {
 
     //endregion
 
-    //region Static
-    static toUnboundedExternalAmount(amount: NumberLike): UnboundedExternalAmount {
-        return new ExternalDecimal(
-            Numbers.toNumericString(amount.toString()));
+    //region Math
+    add(other: BigMoneyProvider) {
+        return this.checkedMath(other,
+            (them, self) => self.add(them)
+        );
     }
+
+    sub(other: BigMoneyProvider) {
+        return this.checkedMath(
+            other,
+            (them, self) =>
+                self.sub(them));
+    }
+
+    div(other: BigMoneyProvider): BigMoney {
+        return this.checkedMath(
+            other,
+            (them, self) =>
+                self.div(them));
+    }
+
+    mul(other: BigMoneyProvider): BigMoney {
+        return this.checkedMath(
+            other,
+            (them, self) =>
+                self.mul(them)
+        );
+    }
+
+    externalDiv(other: NumberLike) {
+        Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
+        return this.uncheckedMath(
+            BigMoney.toUnboundedExternalAmount(other),
+            (them, self) =>
+                self.div(them));
+        // this.externalNumber.divUnsafe(amount));
+    }
+
+    externalMul(other: NumberLike) {
+        Numbers.preventBigNumber(other, `unlikely that you want to divide by a ${typeof other}`);
+        return this.uncheckedMath(
+            BigMoney.toUnboundedExternalAmount(other),
+            (them, self) =>
+                self.mul(them));
+    }
+
+    //endregion
+
+    //region Conversion
+    // TODO: we need to test this function
+    /**
+     * 2 BTC @ $100ea
+     * "convert 2 BTC into USD": (2 BTC).convert(100 USD) = "200 USD"
+     * @param price
+     */
+    convert(price: BigMoneyProvider): BigMoney {
+        Currencies.shouldBeDifferentCurrency(this, price);
+        /// 1000000000000000000 ($1) * 2500 ($25) =
+
+        const result = BigMoney.likeExternal(
+            price,
+            BigMoney.toExternalDecimal(price)
+                .mul(
+                    BigMoney.toExternalDecimal(this)));
+
+        console.log(`[${this}].convert(${price}) = ${result}`);
+
+        return result;
+    }
+
+    //endregion
+
+
+    //region Static
 
     static likeExternal(other: BigMoneyProvider, amount: UnboundedExternalAmount): BigMoney {
         return BigMoney.ofExternal(amount, Money.currencyOf(other));
@@ -244,9 +260,12 @@ export class BigMoney implements BigMoneyProvider {
         );
     }
 
-    // static internalize(mp:BigMoneyProvider) {
-    //     return mp.toBigMoney().currencyUnit.digits.internalize(mp.toBigMoney().externalNumber);
-    // }
+    static isBigMoneyProvider(thing:any) {
+        if (!thing) return false;
+        const bmp = (thing as BigMoneyProvider);
+        if (!bmp) return false; // TODO: is this necessary?
+        return (typeof bmp.toBigMoney === 'function' && CurrencyUnit.isLike(bmp.currencyUnit))
+    }
 
     static toMoney(mp: BigMoneyProvider, rounding: RoundingMode): Money {
         const m = mp.toBigMoney();
@@ -254,21 +273,40 @@ export class BigMoney implements BigMoneyProvider {
     }
 
     //////////////////////////////////////////////////
+
+    static toExternalDecimal(money: BigMoneyProvider) {
+        return money.toBigMoney().externalDecimal
+    }
+
+    static toUnboundedExternalAmount(amount: NumberLike|BigMoneyProvider): UnboundedExternalAmount {
+        if (this.isBigMoneyProvider(amount)) {
+            return BigMoney.toUnboundedExternalAmount(
+                (amount as BigMoneyProvider).toBigMoney().unboundedExternalAmount)
+        } else {
+            return new ExternalDecimal(
+                Numbers.toNumericString(amount.toString()));
+        }
+    }
+
     static toRoundedInternalAmount(mp: BigMoneyProvider, roundingMode: RoundingMode): InternalAmount {
         return mp.toBigMoney().currencyUnit.digits.internalize(
             BigMoney.toRoundedExternalAmount(
                 mp, roundingMode));
     }
 
+    static withBigMoney<T>(provider: BigMoneyProvider, fn: (money:BigMoney) => T): T{
+        return fn(provider.toBigMoney())
+    }
+
     static toRoundedExternalAmount(mp: BigMoneyProvider, rounding: RoundingMode): string {
-        const m = mp.toBigMoney();
-        return Numbers.toRoundedDecimalPlaces(
-            m.unboundedExternalAmount,
-            {
-                decimals: m.currencyUnit.digits.parsed,
-                rounding,
-            }
-        );
+        return BigMoney.withBigMoney(mp, (money) =>
+            Numbers.toRoundedDecimalPlaces(
+                money.unboundedExternalAmount,
+                {
+                    decimals: money.currencyUnit.digits.parsed,
+                    rounding,
+                }
+            ))
     }
 
     //endregion
@@ -280,20 +318,11 @@ export class BigMoney implements BigMoneyProvider {
 //endregion
 
 //region export class Money
-export class Money implements BigMoneyProvider {
-
-    //region MoneyProvider { toBigMoney() : BigMoney }
-    big: BigMoney;
-    readonly val: string;
-
-    toBigMoney(): BigMoney {
-        return this.big;
-    }
-
-    //endregion
+export class Money extends MoneyMath {
 
     //region protected constructor(money: BigMoney)
     protected constructor(money: BigMoney) {
+        super();
         this.big = money;
         this.val = this.big.toString();
     }
@@ -309,9 +338,18 @@ export class Money implements BigMoneyProvider {
     // }
     //endregion
 
+    //region MoneyProvider { toBigMoney() : BigMoney } | currencyUnit
+    big: BigMoney;
+    readonly val: string;
+
+    toBigMoney(): BigMoney {
+        return this.big;
+    }
+
     get currencyUnit() {
         return this.big.currencyUnit;
     };
+    //endregion
 
     //region amounts
     get internalAmount(): string {
@@ -320,10 +358,6 @@ export class Money implements BigMoneyProvider {
 
     get internalNumber(): BigNumber {
         return BigMoney.toRoundedInternalAmount(this, this.roundingMode);
-    }
-
-    get externalAmount(): string {
-        return this.currencyUnit.digits.externalize(this.internalNumber);
     }
 
     get externalUnsafe(): number {
@@ -342,17 +376,23 @@ export class Money implements BigMoneyProvider {
             this.currencyUnit.digits.fmt);
     }
 
-    get renderedAmount(): string {
-        return this.currencyUnit.digits.render(this.externalDecimal);
+    get externalAmount(): string {
+        return this.currencyUnit.digits.externalize(this.internalNumber);
     }
 
-    get roundingMode() {
-        return RoundingMode.TRUNCATE;
+    get renderedAmount(): string {
+        // TODO: concept of render makes no sense.
+        // TODO: "external" is the same thing as "rendered" ?
+        return this.currencyUnit.digits.render(this.externalDecimal);
     }
 
     //endregion
 
     //region Math
+
+    abs() {
+        return Money.likeInternal(this, this.internalNumber.abs());
+    }
 
     convert(price: Money, rounding: RoundingMode = RoundingMode.TRUNCATE): Money {
         return this.toBigMoney().convert(price).toMoney(rounding);
@@ -362,10 +402,6 @@ export class Money implements BigMoneyProvider {
         return this.toBigMoney().mul(money).toMoney(roundingMode)
     }
 
-    abs() {
-        return Money.likeInternal(this, this.internalNumber.abs());
-    }
-
     add(money: Money, rounding: RoundingMode = RoundingMode.ROUND_HALF_EVEN): Money {
         return this.toBigMoney().add(money).toMoney(rounding);
     }
@@ -373,6 +409,7 @@ export class Money implements BigMoneyProvider {
     //endregion
 
     //region Comparison
+
     eq(other: Money): boolean {
         // if not the same currency, return false
         if (!this.currencyUnit.equals(other.currencyUnit)) {
@@ -554,13 +591,17 @@ export class Money implements BigMoneyProvider {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    static one(currency: CurrencyLike) {
-        return Money.ofExternal(currency, 1);
-    }
+    // static one(currency: CurrencyLike) {
+    //     return Money.ofExternal(currency, 1);
+    // }
 
-    static async resolve(lazy: Lazy<BigNumber>, currency: CurrencyLike) {
-        return Money.ofInternal(currency, (await lazy));
-    }
+    // static async lazyInternal(lazy: Lazy<BigNumber>, currency: CurrencyLike) {
+    //     return Money.ofInternal(currency, (await lazy));
+    // }
+    //
+    // static async lazyExternal(lazy: Lazy<NumberLike>, currency: CurrencyLike) {
+    //     return Money.ofExternal(currency, (await lazy));
+    // }
 
 }
 
@@ -568,16 +609,4 @@ export class Money implements BigMoneyProvider {
 
 export default Money;
 
-const ofUSD = (formattedValue: string | BigNumber) => {
-    if (formattedValue instanceof BigNumber) {
-        return Money.ofInternal(Currencies.USD, formattedValue);
-    } else {
-        return Money.ofExternal(Currencies.USD, formattedValue);
-    }
 
-    // const money = Money.ofExternal(formattedValue, Currencies.USD);
-    // console.log(`ofUSD(${formattedValue}) = ${money} (${money.internalAmount.toString()}) [${money.externalUnsafe}|${money.externalAmount.toString()}]`);
-    // return money
-};
-
-export {ofUSD};
