@@ -65,12 +65,15 @@ jobs:
         node-version: 16
 
     - name: Install dependencies
+      run: echo "running npm install"
       run: npm install
 
     - name: Build library
+      run: echo "running npm build"
       run: npm run build
 
     - name: Publish to npm
+      run: echo "running npm publish"
       run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
