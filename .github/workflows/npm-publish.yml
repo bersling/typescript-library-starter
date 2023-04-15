@@ -1,21 +1,78 @@
-# We are using nodejs version 14.something and required one is >=16 
+# # We are using nodejs version 14.something and required one is >=16 
 
-name: Publish Package to npmjs
+# name: Publish Package to npmjs
+# on:
+#   push:
+#     branches: [master]
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#       # Setup .npmrc file to publish to npm
+#       - uses: actions/setup-node@v3
+#         with:
+#           node-version: '16'
+#           registry-url: 'https://registry.npmjs.org'
+#       - run: npm build
+#       - run: npm test
+#       - run: npm publish
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+# name: Publish to npm
+
+# on:
+#   push:
+#     branches:
+#       - master
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - uses: actions/checkout@v2
+#       - name: Use Node.js
+#         uses: actions/setup-node@v1
+#         with:
+#           node-version: '14.x'
+#       - run: npm ci
+#       - run: npm version patch
+#       - run: echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
+#       - run: npm publish
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+name: Publish to NPM registry
+
 on:
   push:
-    branches: [master]
+    branches:
+      - master
+
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          registry-url: 'https://registry.npmjs.org'
-      - run: npm build
-      - run: npm test
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        # I will experiment furthermore with the node version
+        node-version: 14
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build library
+      run: npm run build
+
+    - name: Publish to npm
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
