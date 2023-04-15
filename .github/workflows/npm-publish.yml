@@ -57,12 +57,11 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
-        # I will experiment furthermore with the node version
         node-version: 14
 
     - name: Install dependencies
