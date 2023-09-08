@@ -1,6 +1,6 @@
 {
   "name": "hwrld",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Can log \"hello world\" and \"goodbye world\" to the console!",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,8 +30,7 @@
     "url": "https://github.com/bersling/typescript-library-starter/issues"
   },
   "homepage": "https://github.com/bersling/typescript-library-starter#readme",
-  "devDependencies": {},
-  "dependencies": {
-    "typescript": "^4.2.3"
+  "devDependencies": {
+    "typescript": "5.2.2"
   }
 }
