@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "hwrld": "^2.1.1"
+    "hwrld": "^2.2.0-beta.1"
   },
   "devDependencies": {
     "ts-node": "^9.1.1",
