@@ -31,6 +31,6 @@
   },
   "homepage": "https://github.com/bersling/typescript-library-starter#readme",
   "devDependencies": {
-    "typescript": "5.2.2"
+    "typescript": "6.0.3"
   }
 }

@@ -1,6 +1,6 @@
-# Example Typescript 5.x Library
+# Example Typescript 6.x Library
 
-Simple starter library updated in 2023.
+Simple starter library updated in 2026.
 
 Tutorial can be found at
 [https://www.tsmean.com/articles/how-to-write-a-typescript-library/](https://www.tsmean.com/articles/how-to-write-a-typescript-library/).
